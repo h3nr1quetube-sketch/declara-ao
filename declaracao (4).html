@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>uma pergunta pra você</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --tinta: #121014;
+    --papel: #1c1820;
+    --sangue: #b3121b;
+    --amaldicoado: #7b3fe4;
+    --pergaminho: #f2ece4;
+    --ouro: #e8a33d;
+  }
+
+  *{ box-sizing: border-box; }
+
+  body{
+    margin:0;
+    min-height:100vh;
+    background:
+      radial-gradient(circle, rgba(242,236,228,0.05) 1px, transparent 1.3px) 0 0/22px 22px,
+      var(--tinta);
+    color: var(--pergaminho);
+    font-family: "Space Grotesk", sans-serif;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    overflow:hidden;
+    position:relative;
+  }
+
+  /* painel estilo capa de manga / flyer de show, com bordas rasgadas */
+  .painel{
+    position:relative;
+    width:min(480px, 90vw);
+    background: var(--papel);
+    padding: 48px 36px 40px;
+    border: 3px solid var(--pergaminho);
+    box-shadow: 10px 10px 0 var(--sangue);
+    clip-path: polygon(
+      0% 2%, 3% 0%, 97% 1%, 100% 3%,
+      99% 97%, 97% 100%, 4% 99%, 0% 98%
+    );
+    text-align:center;
+    transition: filter .3s ease;
+  }
+
+  .selo{
+    display:inline-block;
+    font-family:"Bungee", sans-serif;
+    font-size: 12px;
+    letter-spacing: 1px;
+    color: var(--ouro);
+    border: 2px solid var(--ouro);
+    padding: 4px 10px;
+    transform: rotate(-3deg);
+    margin-bottom: 18px;
+  }
+
+  h1{
+    font-family:"Bungee", sans-serif;
+    font-size: clamp(28px, 6vw, 40px);
+    line-height:1.15;
+    margin: 0 0 14px;
+    color: var(--pergaminho);
+    text-shadow: 3px 3px 0 var(--sangue);
+  }
+
+  h1 span{ color: var(--amaldicoado); }
+
+  p.sub{
+    font-size:15px;
+    color: #cfc6d8;
+    margin: 0 0 32px;
+  }
+
+  .botoes{
+    display:flex;
+    gap:18px;
+    justify-content:center;
+    align-items:center;
+    flex-wrap:wrap;
+    position:relative;
+    min-height: 60px;
+  }
+
+  button{
+    font-family:"Space Grotesk", sans-serif;
+    font-weight:700;
+    font-size:17px;
+    padding: 14px 30px;
+    border-radius: 999px;
+    border: 3px solid var(--pergaminho);
+    cursor:pointer;
+    transition: transform .15s ease;
+    touch-action: manipulation;
+  }
+
+  button:focus-visible{
+    outline: 3px solid var(--ouro);
+    outline-offset: 2px;
+  }
+
+  #btnSim{
+    background: var(--sangue);
+    color: var(--pergaminho);
+  }
+  #btnSim:hover{ transform: scale(1.06); }
+
+  #btnNao{
+    background: transparent;
+    color: var(--pergaminho);
+    position: static; /* só vira "fixed" via JS no primeiro clique, pra fugir pela tela toda */
+  }
+
+  /* overlay de confirmação */
+  .overlay{
+    position:fixed; inset:0;
+    background: rgba(10,8,12,0.85);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    z-index: 20;
+    padding: 20px;
+  }
+  .overlay.ativo{ display:flex; }
+
+  .caixa-confirma{
+    background: var(--papel);
+    border: 3px solid var(--ouro);
+    padding: 32px 26px;
+    max-width: 360px;
+    text-align:center;
+    box-shadow: 8px 8px 0 var(--amaldicoado);
+  }
+
+  .caixa-confirma p{
+    font-family:"Bungee", sans-serif;
+    font-size: 19px;
+    margin: 0 0 22px;
+  }
+
+  .caixa-confirma .linha{
+    display:flex;
+    gap:14px;
+    justify-content:center;
+  }
+
+  #confirmaSim{ background: var(--amaldicoado); color: var(--pergaminho); }
+  #confirmaVoltar{ background: transparent; color: var(--pergaminho); }
+
+  /* tela final triste - só o emoji, como pedido */
+  .tela-triste{
+    display:none;
+    font-size: 120px;
+    line-height:1;
+  }
+  .tela-triste.ativo{ display:block; animation: aparecer .5s ease; }
+
+  /* tela final feliz */
+  .tela-feliz{ display:none; }
+  .tela-feliz.ativo{ display:block; animation: aparecer .5s ease; }
+  .tela-feliz h1{ margin-bottom: 8px; }
+  .tela-feliz .corasoes{ font-size: 44px; margin-top: 10px; }
+
+  @keyframes aparecer{
+    from{ opacity:0; transform: scale(.85); }
+    to{ opacity:1; transform: scale(1); }
+  }
+
+  .rodape{
+    margin-top: 26px;
+    font-size: 11px;
+    color: #756c80;
+    letter-spacing: .5px;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ transition:none !important; animation:none !important; }
+  }
+</style>
+</head>
+<body>
+
+  <div class="painel" id="painel">
+
+    <!-- ===== TELA 1: a pergunta ===== -->
+    <div id="telaPergunta">
+      <h1>ei, <span>Mariana</span>...<br>preciso te contar uma coisa</h1>
+      <p class="sub">eu tô gostando de você porque desde que você chegou me sinto mais feliz, eu nunca quis tanto algo como eu quero você. eu quero dividir momentos, sair por aí na madrugada, ver o pôr do sol ao seu lado, dançar na chuva, ver as estrelas, olhar nos seus olhos e, enquanto você rir pra mim, te dizer o quanto te amo e o quanto você é importante pra mim. você despertou as coisas mais bonitas que existiam em mim, que eu nem sabia que tinha, você me fez saber o que realmente é o amor, a simplicidade, o respeito. você é a única pessoa que sabe decifrar o meu olhar, e só você consegue fazer isso — tudo isso. só você consegue me deixar sem palavras, sem forças, só você consegue me deixar horas acordada, com uma vontade incontrolável de entrelaçar os meus dedos nos teus, e te encher de beijos. estar com você, é você quem eu quero que esteja ao meu lado, mais ninguém, é você quem eu quero pra vida toda, é só você.</p>
+
+      <div class="botoes">
+        <button id="btnSim">sim, eu topo 🖤</button>
+        <button id="btnNao">não</button>
+      </div>
+    </div>
+
+    <!-- ===== TELA FELIZ (ela apertou sim) ===== -->
+    <div id="telaFeliz" class="tela-feliz">
+      <h1>que bom ouvir isso <span>💥</span></h1>
+      <p class="sub">EU TE AMO 🤪🤘</p>
+      <div class="corasoes">🖤🔥🖤</div>
+    </div>
+
+    <!-- ===== TELA TRISTE (ela confirmou o não) ===== -->
+    <div id="telaTriste" class="tela-triste">😢</div>
+
+    <p class="rodape">feito com carinho, um pouco de rock e muito nervosismo</p>
+  </div>
+
+  <!-- overlay de confirmação depois de 3 fugas do botão "não" -->
+  <div class="overlay" id="overlay">
+    <div class="caixa-confirma">
+      <p>peraí... tem certeza mesmo? 🥺</p>
+      <div class="linha">
+        <button id="confirmaSim">sim, tenho certeza</button>
+        <button id="confirmaVoltar">deixa eu pensar</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+  /* =======================================================
+     CONFIGURAÇÕES RÁPIDAS — mexa só aqui
+     ======================================================= */
+  // (nome dela já está no HTML, no <h1>)
+
+  // Cole aqui o link do Formspree se quiser receber um e-mail avisando a resposta.
+  // Enquanto estiver vazio, essa parte simplesmente não faz nada.
+  const FORM_ENDPOINT = "";
+
+  // Cole aqui os dados do Supabase se quiser guardar a resposta num banco de dados.
+  // Enquanto SUPABASE_URL estiver vazio, essa parte simplesmente não faz nada.
+  const SUPABASE_URL = "https://nmsfeplupdzklzbxqbsk.supabase.co";        // ex: "https://xxxxxxxx.supabase.co"
+  const SUPABASE_ANON_KEY = "sb_publishable_DMv0GS9JdsczdYNNVHJOhw_tx_Fdwwo";   // a "anon public key" do seu projeto
+  const SUPABASE_TABLE = "respostas";
+
+  /* ======================================================= */
+
+  const btnNao = document.getElementById('btnNao');
+  const btnSim = document.getElementById('btnSim');
+  const overlay = document.getElementById('overlay');
+  const confirmaSim = document.getElementById('confirmaSim');
+  const confirmaVoltar = document.getElementById('confirmaVoltar');
+
+  const telaPergunta = document.getElementById('telaPergunta');
+  const telaFeliz = document.getElementById('telaFeliz');
+  const telaTriste = document.getElementById('telaTriste');
+
+  const LIMITE_FUGAS = 3;
+  let cliquesNao = 0;
+
+  const botoesContainer = document.querySelector('.botoes');
+
+  function moverBotaoNao(){
+    // tira o botão de dentro do card (que tem clip-path e cortava ele fora da área visível)
+    document.body.appendChild(btnNao);
+
+    btnNao.style.position = 'fixed';
+    btnNao.style.zIndex = '15';
+
+    const largura = btnNao.offsetWidth;
+    const altura = btnNao.offsetHeight;
+    const margem = 20;
+
+    const vv = window.visualViewport;
+    const larguraTela = vv ? vv.width : window.innerWidth;
+    const alturaTela = vv ? vv.height : window.innerHeight;
+    const deslocEsquerda = vv ? vv.offsetLeft : 0;
+    const deslocTopo = vv ? vv.offsetTop : 0;
+
+    const cantos = [
+      { left: deslocEsquerda + margem, top: deslocTopo + margem },                                        // topo-esquerda
+      { left: deslocEsquerda + larguraTela - largura - margem, top: deslocTopo + margem },                 // topo-direita
+      { left: deslocEsquerda + margem, top: deslocTopo + alturaTela - altura - margem },                   // baixo-esquerda
+      { left: deslocEsquerda + larguraTela - largura - margem, top: deslocTopo + alturaTela - altura - margem }, // baixo-direita
+    ];
+
+    const escolhido = cantos[Math.floor(Math.random() * cantos.length)];
+
+    // trava os valores dentro da tela, mesmo em telas bem pequenas
+    const left = Math.min(Math.max(escolhido.left, margem), larguraTela - largura - margem);
+    const top = Math.min(Math.max(escolhido.top, margem), alturaTela - altura - margem);
+
+    btnNao.style.left = left + 'px';
+    btnNao.style.top = top + 'px';
+    btnNao.style.right = 'auto';
+    btnNao.style.bottom = 'auto';
+  }
+
+  function avisar(resposta){
+    if(FORM_ENDPOINT){
+      fetch(FORM_ENDPOINT, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Accept": "application/json" },
+        body: JSON.stringify({ resposta: resposta, quando: new Date().toLocaleString('pt-BR') })
+      }).catch(() => {});
+    }
+
+    if(SUPABASE_URL && SUPABASE_ANON_KEY){
+      fetch(`${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": SUPABASE_ANON_KEY,
+          "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+          "Prefer": "return=minimal"
+        },
+        body: JSON.stringify({ resposta: resposta })
+      }).catch(() => {});
+    }
+  }
+
+  btnNao.addEventListener('click', () => {
+    cliquesNao++;
+    if(cliquesNao <= LIMITE_FUGAS){
+      moverBotaoNao();
+    } else {
+      overlay.classList.add('ativo');
+    }
+  });
+
+  confirmaVoltar.addEventListener('click', () => {
+    overlay.classList.remove('ativo');
+    cliquesNao = 0;
+    // devolve o botão pro lugar de origem, dentro do card
+    botoesContainer.appendChild(btnNao);
+    btnNao.style.position = 'static';
+    btnNao.style.left = '';
+    btnNao.style.top = '';
+    btnNao.style.right = '';
+    btnNao.style.bottom = '';
+    btnNao.style.zIndex = '';
+  });
+
+  confirmaSim.addEventListener('click', () => {
+    overlay.classList.remove('ativo');
+    telaPergunta.style.display = 'none';
+    telaTriste.classList.add('ativo');
+    avisar('não');
+  });
+
+  btnSim.addEventListener('click', () => {
+    telaPergunta.style.display = 'none';
+    telaFeliz.classList.add('ativo');
+    avisar('sim');
+  });
+</script>
+</body>
+</html>
